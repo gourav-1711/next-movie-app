@@ -40,8 +40,7 @@ export default function Banner() {
   };
 
   const upcomingMovie = () => {
-    axios
-      .get(
+    axios.get(
         `https://api.themoviedb.org/3/movie/upcoming?api_key=${api_key}&language=en-US&page=2`
       )
       .then((ress) => {
@@ -113,7 +112,7 @@ export default function Banner() {
         )}
       </div>
 
-      {/* // trending movies */}
+      {/* // upcoming movies */}
       <div className=" max-w-[1200px] mx-auto  mb-5 w-[95%] md:w-full">
         <div className=" text-2xl md:text-4xl capitalize text-[#D5C7CB] font-semibold my-5 ">
           {" "}
@@ -130,7 +129,7 @@ export default function Banner() {
           }}
           className="w-full"
         >
-          <CarouselContent className="-ml-4 w-[99%] mx-auto">
+          <CarouselContent className="-ml-1 md:-ml-4 w-[99%] mx-auto">
             {cards.map((card, index) => (
               <CarouselItem
                 key={index}

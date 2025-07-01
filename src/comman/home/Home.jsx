@@ -4,7 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import React, { useEffect, useState } from "react";
 import Banner from "./Banner";
 import axios from "axios";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Film,
+  Search,
+  Star,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -15,6 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 export default function Home() {
   ///////////////////////////////////////////////////
   const [movies, setMovies] = useState([]);
@@ -32,10 +47,18 @@ export default function Home() {
   const years = Array.from({ length: 25 }, (_, i) => currentYear - i);
 
   const [ratingFilter, setRatingFilter] = useState("");
-  const rating = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const rating = [4, 5, 6, 7, 8, 9];
 
   const [genres, setGenres] = useState([]);
 
+  /////////////////////////////////////
+
+  // Modal state
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [movieVideos, setMovieVideos] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState();
+  const [modalLoading, setModalLoading] = useState(false);
+  const [movieDetailGenres, setMovieDetailGenres] = useState([]);
   ///////////////////////////////////////////////////////
 
   const API_URL =
@@ -90,7 +113,8 @@ export default function Home() {
       url += `&vote_average.gte=${ratingFilter}`;
     }
 
-    axios.get(url)
+    axios
+      .get(url)
       .then((ress) => {
         setMovies(ress.data.results);
         setLoading(false);
@@ -110,6 +134,76 @@ export default function Home() {
     setPage(page + 1);
   };
 
+  ///////////////////////////////
+
+  const fetchMovieDetails = async (movieId) => {
+    setModalLoading(true);
+    try {
+      // Fetch movie details
+      const detailsResponse = await fetch(
+        `${MOVIE_DETAILS_API}${movieId}?api_key=04c35731a5ee918f014970082a0088b1`
+      );
+      if (!detailsResponse.ok) {
+        throw new Error("Failed to fetch movie details");
+      }
+      const movieDetails = await detailsResponse.json();
+
+      // Fetch movie videos
+      const videosResponse = await fetch(
+        `${MOVIE_DETAILS_API}${movieId}/videos?api_key=04c35731a5ee918f014970082a0088b1`
+      );
+      if (!videosResponse.ok) {
+        throw new Error("Failed to fetch movie videos");
+      }
+      const videosData = await videosResponse.json();
+
+      setSelectedMovie(movieDetails);
+      console.log(movieDetails.genres);
+      setMovieDetailGenres(movieDetails.genres);
+
+      setMovieVideos(videosData.results);
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error("Error fetching movie details:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const formatRuntime = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const getClassByRate = (vote) => {
+    if (vote >= 8) return "text-green-500";
+    else if (vote >= 5) return "text-orange-500";
+    else return "text-red-500";
+  };
+
+  const getTrailer = () => {
+    // First try to find a YouTube trailer
+    const youtubeTrailer = movieVideos.find(
+      (video) => video.site === "YouTube" && video.type === "Trailer"
+    );
+
+    // If no trailer, try to find a teaser
+    if (!youtubeTrailer) {
+      const youtubeTeaser = movieVideos.find(
+        (video) => video.site === "YouTube" && video.type === "Teaser"
+      );
+      return youtubeTeaser;
+    }
+
+    return youtubeTrailer;
+  };
+
+  const handleViewDetails = (movieId) => {
+    fetchMovieDetails(movieId);
+  };
+
+  /////////////////////////////////////
   useEffect(() => {
     fetchMovie();
   }, [page, searchTerm, yearFilter, selectedGenre, ratingFilter]);
@@ -168,7 +262,11 @@ export default function Home() {
           {/* genre */}
           <div className="w-full  flex flex-col items-center justify-center md:flex-row gap-4">
             <div className="relative w-full">
-              <Select value={selectedGenre} onValueChange={setSelectedGenre} className="w-[200px]">
+              <Select
+                value={selectedGenre}
+                onValueChange={setSelectedGenre}
+                className="w-[200px]"
+              >
                 <SelectTrigger className="w-full   bg-black/50 border-2 border-purple-500/50 rounded-xl text-white placeholder:text-purple-300/60 focus:border-purple-400 focus:ring-1 focus:ring-purple-500/20 transition-all duration-300 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/25 backdrop-blur-sm">
                   <SelectValue
                     placeholder="Select a movie genre"
@@ -314,7 +412,7 @@ export default function Home() {
                     movie={movie}
                     imgPath={IMG_PATH}
                     // getClassByRate={getClassByRate}
-                    // onViewDetails={handleViewDetails}
+                    onViewDetails={handleViewDetails}
                   />
                 ))
               ) : (
@@ -323,6 +421,139 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Movie Details Modal */}
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen} className="w-full">
+              <DialogContent className="bg-gray-800 scrollbar-hide text-white border-gray-700 w-[85vw] max-w-[85vw] h-[90vh] overflow-y-auto">
+                {modalLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                  </div>
+                ) : selectedMovie ? (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl font-bold">
+                        {selectedMovie.title}
+                      </DialogTitle>
+                      <DialogDescription className="text-gray-400">
+                        {selectedMovie.release_date &&
+                          new Date(selectedMovie.release_date).getFullYear()}
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid grid-cols-1  gap-6 mt-4">
+                      {/* Trailer Section */}
+                      <div className="w-full">
+                        {getTrailer() ? (
+                          <div className="aspect-video w-full rounded-lg overflow-hidden">
+                            <iframe
+                              width="100%"
+                              height="100%"
+                              src={`https://www.youtube.com/embed/${
+                                getTrailer()?.key
+                              }`}
+                              title="YouTube video player"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              className="w-full h-full"
+                            ></iframe>
+                          </div>
+                        ) : (
+                          <div className="aspect-video w-full rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center">
+                            <div className="text-center p-4">
+                              <Film className="w-16 h-16 mx-auto mb-2 text-gray-500" />
+                              <p className="text-gray-400">
+                                No trailer available
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Movie Info Section */}
+                      <div className="flex flex-col gap-4">
+                        {/* Backdrop Image */}
+                        {selectedMovie.backdrop_path && (
+                          <div className="rounded-lg overflow-hidden">
+                            <img
+                              src={`${IMG_PATH}${selectedMovie.backdrop_path}`}
+                              alt={`${selectedMovie.title} backdrop`}
+                              className="w-full h-auto object-cover"
+                            />
+                          </div>
+                        )}
+
+                        {/* Movie Stats */}
+                        <div className="flex flex-wrap gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4 text-white" />
+                            <span>
+                              {new Date(
+                                selectedMovie.release_date
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {selectedMovie.runtime && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4 text-white" />
+                              <span>
+                                {formatRuntime(selectedMovie.runtime)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 text-yellow-500" />
+                            <span
+                              className={getClassByRate(
+                                selectedMovie.vote_average
+                              )}
+                            >
+                              {selectedMovie.vote_average.toFixed(1)} (
+                              {selectedMovie.vote_count} votes)
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Add to Collection Button */}
+                        <div className="mt-4">
+                          {/* <AddToCollectionDialog movie={selectedMovie} /> */}
+                        </div>
+
+                        {/* Genres */}
+                        <div className="flex flex-wrap gap-2">
+                          {movieDetailGenres &&
+                          movieDetailGenres.length > 0
+                            ? movieDetailGenres.map((genre) => (
+                                <div
+                                  key={genre.id}
+                                  className="bg-purple-900/50 text-sm text-white border p-1 rounded-full"
+                                >
+                                  {genre.name}
+                                </div>
+                              ))
+                            : "No genres"}
+                        </div>
+
+                        {/* Overview */}
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">
+                            Overview
+                          </h3>
+                          <p className="text-gray-300">
+                            {selectedMovie.overview}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center p-4">
+                    No movie details available
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </>
         )}
       </div>
@@ -330,7 +561,7 @@ export default function Home() {
   );
 }
 
-function MovieCard({ movie, imgPath }) {
+function MovieCard({ movie, imgPath, getClassByRate, onViewDetails }) {
   // getClassByRate, onViewDetails
   return (
     <Card className="overflow-hidden bg-gray-800 border-gray-200 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 h-full flex flex-col py-0">
@@ -360,7 +591,7 @@ function MovieCard({ movie, imgPath }) {
           {movie.overview}
         </p>
         <Button
-          className="mt-4 w-full bg-purple-600 hover:bg-purple-700"
+          className="mt-4 w-full bg-purple-600 hover:bg-purple-700 cursor-pointer"
           onClick={() => onViewDetails(movie.id)}
         >
           View Details

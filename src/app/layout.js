@@ -1,5 +1,10 @@
+"use client";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { store } from "./redux-store/store";
+import { Provider } from "react-redux";
+import Header from "./comman/Header";
+import Footer from "./comman/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -11,18 +16,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "MovieMania",
-  description: "A FullStack Movie App",
-};
+
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-800`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-800 noScroll`}
       >
+         <Provider store={store}>
+
+      <Header />
+
         {children}
+
+        <Footer/>
+        </Provider>
       </body>
     </html>
   );

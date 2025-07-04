@@ -30,6 +30,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import AddToCollectionDialog from "../collection/AddToCollectionModal";
+import AddToCollectionModal from "../collection/AddToCollectionModal";
+
 export default function Home() {
   ///////////////////////////////////////////////////
   const [movies, setMovies] = useState([]);
@@ -59,6 +62,8 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState();
   const [modalLoading, setModalLoading] = useState(false);
   const [movieDetailGenres, setMovieDetailGenres] = useState([]);
+
+  const [openModal, setOpenModal] = useState(false);
   ///////////////////////////////////////////////////////
 
   const API_URL =
@@ -210,7 +215,12 @@ export default function Home() {
 
   return (
     <>
-      <Banner />
+      <Banner
+        movieObject={selectedMovie}
+        setSelectedMovie={setSelectedMovie}
+        setIsModalOpen={setIsModalOpen}
+        fetchMovieDetails={fetchMovieDetails}
+      />
 
       {/* movies section */}
       <div className="header max-w-[96vw] mx-auto my-5 pt-10 space-y-4">
@@ -278,15 +288,7 @@ export default function Home() {
                     <SelectLabel className="text-purple-300 font-semibold text-sm uppercase tracking-wider px-3 py-2">
                       Movie Genres
                     </SelectLabel>
-                    {/* <SelectItem
-                        value={""}
-                        className="text-purple-100 hover:bg-purple-900/30 hover:text-purple-200 focus:bg-purple-800/40 focus:text-white cursor-pointer transition-all duration-200 rounded-lg mx-1 my-0.5 font-medium"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-purple-400 rounded-full shadow-sm shadow-purple-400/50"></span>
-                          All Genres
-                        </span>
-                      </SelectItem> */}
+
                     {genres.map((genre) => (
                       <SelectItem
                         key={genre.id}
@@ -325,15 +327,7 @@ export default function Home() {
                     >
                       All Release Years
                     </SelectLabel>
-                    {/* <SelectItem
-                        value={"Clear"}
-                        className="text-purple-100 hover:bg-purple-900/30 hover:text-purple-200 focus:bg-purple-800/40 focus:text-white cursor-pointer transition-all duration-200 rounded-lg mx-1 my-0.5 font-medium"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-purple-400 rounded-full shadow-sm shadow-purple-400/50"></span>
-                          Clear
-                        </span>
-                      </SelectItem> */}
+
                     {years.map((year) => (
                       <SelectItem
                         key={year}
@@ -411,7 +405,7 @@ export default function Home() {
                     key={movie.id}
                     movie={movie}
                     imgPath={IMG_PATH}
-                    // getClassByRate={getClassByRate}
+                    getClassByRate={getClassByRate}
                     onViewDetails={handleViewDetails}
                   />
                 ))
@@ -423,7 +417,11 @@ export default function Home() {
             </div>
 
             {/* Movie Details Modal */}
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen} className="w-full">
+            <Dialog
+              open={isModalOpen}
+              onOpenChange={setIsModalOpen}
+              className="w-full"
+            >
               <DialogContent className="bg-gray-800 scrollbar-hide text-white border-gray-700 w-[85vw] max-w-[85vw] h-[90vh] overflow-y-auto">
                 {modalLoading ? (
                   <div className="flex justify-center items-center h-64">
@@ -516,14 +514,21 @@ export default function Home() {
                         </div>
 
                         {/* Add to Collection Button */}
-                        <div className="mt-4">
-                          {/* <AddToCollectionDialog movie={selectedMovie} /> */}
-                        </div>
+                        <Button
+                          onClick={() => setOpenModal(true)}
+                          className="w-fit text-white px-3 py-1 rounded cursor-pointer"
+                        >
+                          Add to Collection
+                        </Button>
 
+                        <AddToCollectionModal
+                          openModal={openModal}
+                          setOpenModal={setOpenModal}
+                          movie={selectedMovie}
+                        />
                         {/* Genres */}
                         <div className="flex flex-wrap gap-2">
-                          {movieDetailGenres &&
-                          movieDetailGenres.length > 0
+                          {movieDetailGenres && movieDetailGenres.length > 0
                             ? movieDetailGenres.map((genre) => (
                                 <div
                                   key={genre.id}

@@ -19,7 +19,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="py-6 px-4 bg-gray-800 shadow-md">
+      <header className="py-6 px-4 bg-gray-900 shadow-md ">
         <div className="max-w-[100vw] mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center gap-4">
             {login ? (

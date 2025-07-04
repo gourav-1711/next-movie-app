@@ -15,7 +15,7 @@ export default function LoginPage() {
 
   return (
     <div className=" flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm md:max-w-3xl">
+      <div className=" w-full md:w-[60%] mx-auto max-w-[99vw] md:max-w-[95vw]">
         <div ref={containerRef} className="container" id="container">
           <div className="form-container sign-up">
             <form>

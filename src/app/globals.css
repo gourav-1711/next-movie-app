@@ -122,6 +122,7 @@
 }
 img{
   user-select: none !important;
+  transition: 0.2s ease-out;
 }
 .scrollbar-hide {
   scrollbar-width: none;
@@ -129,4 +130,21 @@ img{
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+img:hover{
+  transform: scale(1.05);
+}
+.noScroll{
+  scrollbar-width: none !important;
+}
+/* ::-webkit-scrollbar{
+  display: none;
+} */
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #054aea;
 }

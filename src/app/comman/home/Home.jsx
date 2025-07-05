@@ -234,10 +234,7 @@ export default function Home() {
   return (
     <>
       <Banner
-        movieObject={selectedMovie}
-        setSelectedMovie={setSelectedMovie}
-        setIsModalOpen={setIsModalOpen}
-        fetchMovieDetails={fetchMovieDetails}
+       
       />
 
       {/* movies section */}

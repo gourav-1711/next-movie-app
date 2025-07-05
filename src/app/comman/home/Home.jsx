@@ -44,7 +44,7 @@ export default function Home() {
   const [page, setPage] = useState(1);
 
   const [selectedGenre, setSelectedGenre] = React.useState();
-  const [yearFilter, setYearFilter] = useState("");
+  const [yearFilter, setYearFilter] = useState(2025);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 25 }, (_, i) => currentYear - i);
@@ -77,17 +77,33 @@ export default function Home() {
   ///////////////////////////////////////////////////////////
 
   const fetchGenres = async () => {
-    try {
-      const response = await fetch(GENRE_API);
-      if (!response.ok) {
-        throw new Error("Failed to fetch genres");
-      }
-      const data = await response.json();
-      setGenres(data.genres);
-      console.log(data.genres);
-    } catch (err) {
-      console.error("Error fetching genres:", err);
-    }
+    // Static genres supported by the API
+    const genreList = [
+      "Action",
+      "Adventure",
+      "Animation",
+      "Biography",
+      "Comedy",
+      "Crime",
+      "Documentary",
+      "Drama",
+      "Family",
+      "Fantasy",
+      "Film-Noir",
+      "History",
+      "Horror",
+      "Music",
+      "Musical",
+      "Mystery",
+      "Romance",
+      "Sci-Fi",
+      "Short",
+      "Sport",
+      "Thriller",
+      "War",
+      "Western",
+    ];
+    setGenres(genreList.map((g) => ({ id: g, name: g })));
   };
 
   useEffect(() => {
@@ -96,37 +112,47 @@ export default function Home() {
 
   ////////////////////////////////////////////////////////
 
-  const fetchMovie = () => {
+  const fetchMovie = async () => {
     setLoading(true);
-    let url = `${API_URL}&page=${page}`;
+    const options = {
+      method: "GET",
+      url: "https://movie-database-api1.p.rapidapi.com/list_movies.json",
+      params: {
+        limit: "20",
+        page: page.toString(),
+        quality: "all",
+        genre: selectedGenre || "all",
+        minimum_rating: ratingFilter || "0",
+        sort_by: "year",
+        order_by: "desc",
+        with_rt_ratings: "false",
+        query_term: searchTerm || "0",
+        // NOTE: This API does not support direct year filtering
+      },
+      headers: {
+        "x-rapidapi-key": "5f0323ef84msh745b88c630bfac5p1485abjsn7b94adffcce0",
+        "x-rapidapi-host": "movie-database-api1.p.rapidapi.com",
+      },
+    };
 
-    if (searchTerm !== "") {
-      url = `https://api.themoviedb.org/3/search/movie?api_key=04c35731a5ee918f014970082a0088b1&query=${searchTerm}`;
-      console.log(searchTerm);
+    try {
+      const response = await axios.request(options);
+      const fetchedMovies = response.data.data.movies || [];
+
+      // Optional: If you want to filter by year locally (since API doesn't support it)
+      const filteredByYear = yearFilter
+        ? fetchedMovies.filter((m) => m.year === yearFilter)
+        : fetchedMovies;
+
+      setMovies(filteredByYear);
+
+      console.log(response.data.data.movies);
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+      setMovies([]);
+    } finally {
+      setLoading(false);
     }
-
-    if (selectedGenre) {
-      url += `&with_genres=${selectedGenre}`;
-      console.log(selectedGenre);
-    }
-
-    if (yearFilter) {
-      url += `&primary_release_year=${yearFilter}`;
-    }
-
-    if (ratingFilter > 0) {
-      url += `&vote_average.gte=${ratingFilter}`;
-    }
-
-    axios
-      .get(url)
-      .then((ress) => {
-        setMovies(ress.data.results);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setLoading(false);
-      });
   };
 
   const handlePrevPage = () => {
@@ -143,33 +169,25 @@ export default function Home() {
 
   const fetchMovieDetails = async (movieId) => {
     setModalLoading(true);
+    const options = {
+      method: "GET",
+      url: "https://movie-database-api1.p.rapidapi.com/movie_details.json",
+      params: {
+        movie_id: movieId,
+        with_images: "true",
+        with_cast: "true",
+      },
+      headers: {
+        "x-rapidapi-key": "5f0323ef84msh745b88c630bfac5p1485abjsn7b94adffcce0",
+        "x-rapidapi-host": "movie-database-api1.p.rapidapi.com",
+      },
+    };
+
     try {
-      // Fetch movie details
-      const detailsResponse = await fetch(
-        `${MOVIE_DETAILS_API}${movieId}?api_key=04c35731a5ee918f014970082a0088b1`
-      );
-      if (!detailsResponse.ok) {
-        throw new Error("Failed to fetch movie details");
-      }
-      const movieDetails = await detailsResponse.json();
-
-      // Fetch movie videos
-      const videosResponse = await fetch(
-        `${MOVIE_DETAILS_API}${movieId}/videos?api_key=04c35731a5ee918f014970082a0088b1`
-      );
-      if (!videosResponse.ok) {
-        throw new Error("Failed to fetch movie videos");
-      }
-      const videosData = await videosResponse.json();
-
-      setSelectedMovie(movieDetails);
-      console.log(movieDetails.genres);
-      setMovieDetailGenres(movieDetails.genres);
-
-      setMovieVideos(videosData.results);
-      setIsModalOpen(true);
-    } catch (err) {
-      console.error("Error fetching movie details:", err);
+      const response = await axios.request(options);
+      console.log(response.data);
+    } catch (error) {
+      console.error(error);
     } finally {
       setModalLoading(false);
     }
@@ -402,6 +420,7 @@ export default function Home() {
               {movies.length > 0 ? (
                 movies.map((movie) => (
                   <MovieCard
+                    data={movie}
                     key={movie.id}
                     movie={movie}
                     imgPath={IMG_PATH}
@@ -507,8 +526,8 @@ export default function Home() {
                                 selectedMovie.vote_average
                               )}
                             >
-                              {selectedMovie.vote_average.toFixed(1)} (
-                              {selectedMovie.vote_count} votes)
+                              {/* {selectedMovie.vote_average.toFixed(1)} (
+                              {selectedMovie.vote_count} votes) */}
                             </span>
                           </div>
                         </div>
@@ -573,17 +592,20 @@ function MovieCard({ movie, imgPath, getClassByRate, onViewDetails }) {
       <div className="relative rounded-2xl">
         <img
           src={
-            movie.poster_path
-              ? `${imgPath}${movie.poster_path}`
+            movie.large_cover_image
+              ? `${movie.large_cover_image}`
               : "/placeholder.jpg"
           }
           alt={movie.title}
           className="w-full  object-cover rounded-2xl"
         />
         <div className="absolute top-2 right-2 bg-background p-1 rounded-md">
-          <span className={`font-bold `}>
-            {/* ${getClassByRate(movie.vote_average)} */}
-            {movie.vote_average.toFixed(1)}
+          <span
+            className={`font-bold  ${
+              movie.rating > 3 ? "text-green-500 " : "text-red-600"
+            }`}
+          >
+            {movie.rating.toFixed(1)}
           </span>
         </div>
       </div>
@@ -591,13 +613,9 @@ function MovieCard({ movie, imgPath, getClassByRate, onViewDetails }) {
         <h3 className="text-lg text-[white] font-semibold mb-1 line-clamp-1">
           {movie.title}
         </h3>
-        <p className="text-sm text-gray-400 mb-2">{movie.release_date}</p>
-        <p className="text-sm text-gray-300 line-clamp-3 flex-grow">
-          {movie.overview}
-        </p>
         <Button
           className="mt-4 w-full bg-purple-600 hover:bg-purple-700 cursor-pointer"
-          onClick={() => onViewDetails(movie.id)}
+          onClick={() => onViewDetails(movie.imdb_code)}
         >
           View Details
         </Button>

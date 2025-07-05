@@ -1,5 +1,6 @@
 "use client";
-import React, { useRef } from "react";
+import axios from "axios";
+import React, { useEffect, useRef } from "react";
 import "../../app/login.css";
 
 export default function LoginPage() {
@@ -13,6 +14,8 @@ export default function LoginPage() {
     containerRef.current?.classList.remove("active");
   };
 
+
+
   return (
     <div className=" flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
       <div className=" w-full md:w-[60%] mx-auto max-w-[99vw] md:max-w-[95vw]">
@@ -20,7 +23,7 @@ export default function LoginPage() {
           <div className="form-container sign-up">
             <form>
               <h1>Create Account</h1>
-              
+
               <input type="text" placeholder="Name" />
               <input type="email" placeholder="Email" />
               <input type="password" placeholder="Password" />
@@ -30,7 +33,7 @@ export default function LoginPage() {
           <div className="form-container sign-in">
             <form>
               <h1>Sign In</h1>
-              
+
               <input type="email" placeholder="Email" />
               <input type="password" placeholder="Password" />
               <a href="#">Forget Your Password?</a>
@@ -52,7 +55,11 @@ export default function LoginPage() {
                   Register with your personal details to use all of site
                   features
                 </p>
-                <button onClick={handleRegisterClick} className="" id="register">
+                <button
+                  onClick={handleRegisterClick}
+                  className=""
+                  id="register"
+                >
                   Sign Up
                 </button>
               </div>
